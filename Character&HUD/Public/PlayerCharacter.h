@@ -13,6 +13,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Runtime/Engine/Classes/Particles/ParticleSystem.h"
 #include "Animation/AnimInstance.h"
+#include "UI/GenericHUD.h"
 #include "PlayerCharacter.generated.h"
 
 /**
@@ -46,11 +47,16 @@ public:
 		float BaseLookUprate;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character|Movement")
 		float SprintSpeed;
+	UFUNCTION(BlueprintCallable, Category = "Character|Input")
+		void PauseGame();
+	UFUNCTION(BlueprintCallable, Category = "Character|Input")
+		void UnPauseGame();
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
 	virtual void OnDeath_Implementation() override;
+	virtual void PossessedBy(AController *NewController) override;
 
 	virtual float TakeDamage(
 		float DamageAmount, struct FDamageEvent const &DamageEvent,
@@ -94,10 +100,13 @@ protected:
 		void LookUpAtRate(float Rate);
 	UFUNCTION(BlueprintCallable, Category = "Character|Input|Camera")
 		void TurnAtRate(float Rate);
-
+	
 	int CurrentAmmo;
 
 private:
 	float PreviousWalkSpeed;
 	void SpawnShootingParticles(FVector ParticleLocation);
+
+	UPROPERTY()
+		class AGenericHUD *HudReference;
 };
