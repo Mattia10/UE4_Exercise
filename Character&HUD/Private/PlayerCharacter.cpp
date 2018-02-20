@@ -56,6 +56,48 @@ APlayerCharacter::APlayerCharacter()
 
 	TrailEffect = nullptr;
 	HitEffect = nullptr;
+
+	HudReference = nullptr;
+}
+
+void APlayerCharacter::PauseGame()
+{
+	if (APlayerController *Pc = Cast<APlayerController>(GetController()))
+	{
+		//check if we don't have a valid hud
+		if (!HudReference)
+		{
+			HudReference = Cast<AGenericHUD>(Pc->GetHUD());
+		}
+		//check if we have a valid hud ref
+		if (HudReference)
+		{
+			//show the PauseMenu
+			HudReference->ShowSpecificMenu(HudReference->GetPauseMenuClass(), false, true);
+		}
+		//pause the game
+		Pc->SetPause(true);
+	}
+}
+
+void APlayerCharacter::UnPauseGame()
+{
+	if (APlayerController *Pc = Cast<APlayerController>(GetController()))
+	{
+		//Unpause the game
+		Pc->SetPause(false);
+		//check if we don't have a valid hud
+		if (!HudReference)
+		{
+			HudReference = Cast<AGenericHUD>(Pc->GetHUD());
+		}
+		//check if we have a valid hud ref
+		if (HudReference)
+		{
+			//show the Gameplay menu
+			HudReference->ShowSpecificMenu(HudReference->GetGameplayHUDClass(), true, false);
+		}
+	}
 }
 
 void APlayerCharacter::BeginPlay()
@@ -92,7 +134,50 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent * PlayerInputCo
 
 void APlayerCharacter::OnDeath_Implementation()
 {
-	
+	bCanShoot = false;
+
+	//stop all movement
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->SetJumpAllowed(false);
+
+	//detach the gun
+	GunMesh->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+
+	//hide hands and gun
+	GunMesh->SetHiddenInGame(true);
+	FP_Mesh->SetHiddenInGame(true);
+
+	if (!HudReference)
+	{
+		if (APlayerController *Pc = Cast<APlayerController>(GetController()))
+		{
+			HudReference = Cast<AGenericHUD>(Pc->GetHUD());
+		}
+	}
+
+	if (HudReference)
+	{
+		HudReference->ShowSpecificMenu(HudReference->GetDeadMenuClass(), false, true);
+	}
+
+}
+
+void APlayerCharacter::PossessedBy(AController * NewController)
+{
+	Super::PossessedBy(NewController);
+
+	//get and set HUD reference
+	if (APlayerController *Pc = Cast<APlayerController>(NewController))
+	{
+		// get a reference to the generic HUD
+		HudReference = Cast<AGenericHUD>(Pc->GetHUD());
+		if (HudReference)
+		{
+			// show the gameplay HUD
+			HudReference->ShowSpecificMenu(HudReference->GetGameplayHUDClass(), true, false);
+		}
+	}
 }
 
 float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser)
